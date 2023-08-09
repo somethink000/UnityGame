@@ -7,17 +7,21 @@ namespace MyGame;
 
 partial class Player : AnimatedEntity
 {
+	[Net] public BaseTeam Team { get; set; }
 	/// <summary>
 	/// Called when the entity is first created 
 	/// </summary>
+	
+
 	public override void Spawn()
 	{
 		Event.Run( "Player.PreSpawn", this );
 		base.Spawn();
+		SetTeam( new GreenTeam() );
 		Velocity = Vector3.Zero;
 		Components.RemoveAll();
 		LifeState = LifeState.Alive;
-		Health = 100;
+		Health = Team.TeamHealth;
 
 		SetModel( "models/citizen/citizen.vmdl" );
 		Components.Add( new WalkController() );
@@ -40,6 +44,7 @@ partial class Player : AnimatedEntity
 		Predictable = true;
 		EnableHitboxes = true;
 
+		
 
 		Inventory.AddItem( new UspPistol() );
 		Inventory.AddItem( new Pistol() );
@@ -49,7 +54,18 @@ partial class Player : AnimatedEntity
 
 		MoveToSpawnpoint();
 		Event.Run( "Player.PostSpawn", this );
+
+		
 	}
+
+	public void SetTeam( BaseTeam team )
+	{
+		if ( Team != team )
+		{
+			Team = team;
+		}
+	}
+
 
 	/// <summary>
 	/// Respawn this player.

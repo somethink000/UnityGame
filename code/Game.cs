@@ -20,6 +20,9 @@ public partial class MyGame : GameManager
 		{
 			_ = new HUDEntity();
 		}
+
+		SetGame( new HideAndSeek() );
+
 	}
 
 	/// <summary>
