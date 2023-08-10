@@ -7,7 +7,6 @@ namespace MyGame;
 
 partial class Player : AnimatedEntity
 {
-	[Net] public BaseTeam Team { get; set; }
 	/// <summary>
 	/// Called when the entity is first created 
 	/// </summary>
@@ -17,11 +16,10 @@ partial class Player : AnimatedEntity
 	{
 		Event.Run( "Player.PreSpawn", this );
 		base.Spawn();
-		SetTeam( new GreenTeam() );
 		Velocity = Vector3.Zero;
 		Components.RemoveAll();
 		LifeState = LifeState.Alive;
-		Health = Team.TeamHealth;
+		Health = 100;
 
 		SetModel( "models/citizen/citizen.vmdl" );
 		Components.Add( new WalkController() );
@@ -46,24 +44,13 @@ partial class Player : AnimatedEntity
 
 		
 
-		Inventory.AddItem( new UspPistol() );
-		Inventory.AddItem( new Pistol() );
-		Inventory.AddItem( new Fists() );
-		Inventory.AddItem( new MP5() );
-		Ammo.GiveAmmo( AmmoType.Pistol, 50 );
+		
+		
 
 		MoveToSpawnpoint();
 		Event.Run( "Player.PostSpawn", this );
 
 		
-	}
-
-	public void SetTeam( BaseTeam team )
-	{
-		if ( Team != team )
-		{
-			Team = team;
-		}
 	}
 
 
@@ -104,6 +91,7 @@ partial class Player : AnimatedEntity
 	public InventoryComponent Inventory => Components.Get<InventoryComponent>();
 	public AmmoStorageComponent Ammo => Components.Get<AmmoStorageComponent>();
 	public UseComponent UseKey => Components.Get<UseComponent>();
+	[Net][Predicted] public TimeSince TimeSinceDeath { get; set; } = 0;
 	public UnstuckComponent UnstuckController => Components.Get<UnstuckComponent>();
 
 
@@ -209,11 +197,38 @@ partial class Player : AnimatedEntity
 			Components.Add( new NoclipController() );
 		}
 
-		timeSinceDied = 0;
+		TimeSinceDeath = 0;
 
 		Event.Run( "Player.PostOnKilled", this );
 	}
 
+
+	public void Cleanup()
+	{
+		DisablePlayer();
+		DeleteRagdoll();
+	}
+
+	public void DeleteRagdoll()
+	{
+		//if ( PlayerRagdoll != null )
+		//{
+		//	PlayerRagdoll.Delete();
+		//	PlayerRagdoll = null;
+		//}
+	}
+
+	public void DisablePlayer()
+	{
+		Tags.Remove( "livingplayer" );
+
+		EnableAllCollisions = false;
+		EnableDrawing = false;
+
+		Inventory.Items?.Clear();
+
+		LifeState = LifeState.Dead;
+	}
 	//---------------------------------------------// 
 
 	/// <summary>
@@ -255,7 +270,6 @@ partial class Player : AnimatedEntity
 	/// Called every tick, clientside and serverside.
 	/// </summary>
 	/// 
-	TimeSince timeSinceDied;
 	public override void Simulate( IClient cl )
 	{
 		base.Simulate( cl );
@@ -296,7 +310,7 @@ partial class Player : AnimatedEntity
 			}
 		}
 
-		if ( LifeState == LifeState.Dead )
+	/*	if ( LifeState == LifeState.Dead )
 		{
 			if ( timeSinceDied > 5 && Game.IsServer )
 			{
@@ -304,7 +318,7 @@ partial class Player : AnimatedEntity
 			}
 
 			return;
-		}
+		}*/
 		// these are to be done in order and before the simulated components
 		UnstuckController?.Simulate( cl );
 		MovementController?.Simulate( cl );
